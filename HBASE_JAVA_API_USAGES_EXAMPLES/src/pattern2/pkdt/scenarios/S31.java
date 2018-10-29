@@ -1,0 +1,141 @@
+/*
+ * Compile and run with:
+ * javac -cp `hbase classpath` Connect3.java 
+ * java -cp `hbase classpath` Connect3
+ */
+package pattern2.pkdt.scenarios;
+import java.io.BufferedReader;
+import java.io.FileReader;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
+import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.hbase.HBaseConfiguration;
+import org.apache.hadoop.hbase.TableName;
+import org.apache.hadoop.hbase.client.Connection;
+import org.apache.hadoop.hbase.client.ConnectionFactory;
+import com.google.protobuf.ServiceException;
+import org.apache.hadoop.hbase.util.Bytes;
+import org.apache.hadoop.hbase.client.Result;
+import org.apache.hadoop.hbase.client.ResultScanner;
+import org.apache.hadoop.hbase.client.Scan;
+import org.apache.hadoop.hbase.client.Table;
+public class S31 {
+
+public static void main(String[] args) throws ServiceException,IOException {
+
+	//Define the date range for start and end rowkey scan 
+	List<String> dt_list = new ArrayList<String>();
+	dt_list.add("20170601");
+	dt_list.add("20170701");
+	
+	try {
+
+	Configuration configuration = HBaseConfiguration.create();
+    configuration.set("hbase.zookeeper.property.clientPort", "2181");
+    configuration.set("hbase.zookeeper.quorum", "sj016570.qa.bdp.company.biz");
+    configuration.set("zookeeper.znode.parent", "/hbase-secure");
+    configuration.set("hbase.master.port", "16000");
+    configuration.set("hbase.master", "sj016570.qa.bdp.company.biz");
+    TableName tableName = TableName.valueOf("ASP20514:pkdt");
+    Connection conn = ConnectionFactory.createConnection(configuration);
+    Table tab1 =  conn.getTable(tableName);
+    long st_time = System.currentTimeMillis();
+    System.out.println("StartTime:"+st_time);
+	//Read the Scenario file
+	//Scenario 1 condition 3: 1000 pack for 12 months data.
+    //    "../../../Scenario1_Pack1000.txt
+	String file="../../../Scenario3_Pack1";
+	int cnt = 0;
+		
+	try (BufferedReader br = new BufferedReader(new FileReader(file))) {
+	    String line;
+	    while ((line = br.readLine()) != null) {
+	       // process the line.
+		       //List<Get> queryRowList = new ArrayList<Get>();
+	           //queryRowList.add(new Get(Bytes.toBytes(line+dt_list.get(0))));
+	    	line = line.substring(1, line.length()-1);
+	    	String start = line.concat(dt_list.get(0));
+	    	String stop = line.concat(dt_list.get(1));
+	    	
+	    	System.out.println("start row: = "+start+" Stop row:="+stop+"query cnt:="+cnt);	
+	    	
+	    	Scan scan = new Scan(Bytes.toBytes(start),Bytes.toBytes(stop)); 
+	    	int numberOfRows = 50883020;
+	    	scan.setCaching(numberOfRows);
+	    	scan.setCacheBlocks(true);
+	    	scan.setBatch(numberOfRows);
+	    	ResultScanner scanner = tab1.getScanner(scan);
+	    	for (Result result = scanner.next(); result != null; result = scanner.next())
+	    	{
+	    		
+	    		//System.out.println("this should go to stdout");
+	    		//PrintStream original = System.out;
+	    		//System.setOut(new PrintStream(new FileOutputStream("/dev/null")));
+
+	    	    System.out.println("records: "+Bytes.toString(result.getValue(Bytes.toBytes("f"), Bytes.toBytes("r"))));
+				//System.out.println("records: "+result.getValue(Bytes.toBytes("f"), Bytes.toBytes("r")));
+		    	//System.setOut(original);
+		    	//System.out.println("this should go to stdout");
+	    	}
+	    	
+
+
+	    	
+	    	//System.out.println("pack: "+line);
+	    	cnt ++;
+	    }
+	
+        long et_time = System.currentTimeMillis();
+        System.out.println("QueryCNT: "+cnt+"; FinishTime:"+et_time+"; StartTime: "+st_time+ "; Time taken by this Query: "+(et_time - st_time));
+    
+	
+	}
+	
+	
+
+	//read Scenarios                
+	//create the row keys for get     
+	//Preapre list to pass to get object 
+	//Prepare container of multiaction
+	//Get the time before execute 
+	//Scrap all the output at stdout
+	//get the last timestamp 
+	//get the time taken
+	//get the session id of execution.
+
+
+	 /*    configuration.set("hbase.master.port", "16000");
+	       configuration.set("hbase.master", "sj016570.qa.bdp.company.biz");
+	       configuration.addResource("/usr/hdp/current/hbase-client/conf/core-site.xml");
+	       configuration.addResource("/usr/hdp/current/hbase-client/conf/hbase-site.xml");
+	       configuration.addResource("/usr/hdp/current/hbase-client/conf/hdfs-site.xml");
+
+
+	       List<Get> queryRowList = new ArrayList<Get>();
+           queryRowList.add(new Get(Bytes.toBytes("AAAA20170101")));
+           queryRowList.add(new Get(Bytes.toBytes("AAAA20170102")));
+           TableName tableName = TableName.valueOf("ASP20514:pkdt");
+           Connection conn = ConnectionFactory.createConnection(configuration);
+
+	       Table tab1 =  conn.getTable(tableName);
+	       Result[] results = tab1.get(queryRowList);
+		   Get g = new Get(Bytes.toBytes("AAAA20170101"));
+	       Result result= tab1.get(g);
+	       byte [] value =result.getValue(Bytes.toBytes("f"),Bytes.toBytes("p"));
+	       String pack_value = Bytes.toString(value);
+	 
+	       for (Result r : results) {
+	    	   byte [] value =r.getValue(Bytes.toBytes("f"),Bytes.toBytes("p"));
+	    	   System.out.println("pack_with_space: " + value);
+           }
+
+      */ 
+      } finally {
+
+				}
+
+       
+	   }
+
+	}
